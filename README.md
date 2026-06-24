@@ -3,10 +3,10 @@
 Post-validation data redaction for [Zod](https://zod.dev) schemas. Annotate fields with replacement values, then parse-and-redact in one step.
 
 ```
-npm install zod-redact zod
+pnpm install zod-redact
 ```
 
-`zod` is a peer dependency (`^3.24 || >=4`).
+Requires `zod` as a peer dependency.
 
 ## Usage
 
