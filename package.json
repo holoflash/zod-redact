@@ -1,6 +1,6 @@
 {
-  "name": "zod-mask",
-  "version": "0.1.0",
+  "name": "zod-redact",
+  "version": "0.0.1",
   "description": "Data masking plugin for Zod schemas — redact, anonymize, or replace sensitive fields after validation.",
   "author": "holoflash",
   "type": "module",
@@ -55,10 +55,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/holoflash/zod-mask"
+    "url": "https://github.com/holoflash/zod-redact"
   },
-  "homepage": "https://github.com/holoflash/zod-mask#readme",
+  "homepage": "https://github.com/holoflash/zod-redact#readme",
   "bugs": {
-    "url": "https://github.com/holoflash/zod-mask/issues"
+    "url": "https://github.com/holoflash/zod-redact/issues"
   }
 }

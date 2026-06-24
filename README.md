@@ -1,9 +1,9 @@
-# zod-mask
+# zod-redact
 
 Post-validation data masking for [Zod](https://zod.dev) schemas. Annotate fields with replacement values, then parse-and-mask in one step.
 
 ```
-npm install zod-mask zod
+npm install zod-redact zod
 ```
 
 `zod` is a peer dependency (`^3.24 || >=4`).
@@ -12,7 +12,7 @@ npm install zod-mask zod
 
 ```ts
 import * as z from "zod/v4";
-import { mask, parseAndMask } from "zod-mask";
+import { mask, parseAndMask } from "zod-redact";
 
 const User = z.object({
   id: z.string(),
