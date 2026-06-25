@@ -56,9 +56,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/holoflash/zod-redact"
+    "url": "git+https://github.com/holoflash/zod-redact.git"
   },
-  "homepage": "https://github.com/holoflash/zod-redact#readme",
+  "homepage": "https://github.com/holoflash/zod-redact",
   "bugs": {
     "url": "https://github.com/holoflash/zod-redact/issues"
   }
