@@ -341,3 +341,49 @@ test("combine creates derived redaction function", () => {
   const b = parseAndRedact(schema, { id: "usr_1", name: "B" });
   expect(a.name).toBe(b.name);
 });
+
+test("intersection of objects redacts fields from both sides", () => {
+  const schema = z.intersection(
+    z.object({ a: redact(z.string(), "A"), keep: z.string() }),
+    z.object({ b: redact(z.number(), 0) })
+  );
+  expect(parseAndRedact(schema, { a: "x", keep: "k", b: 5 })).toEqual({ a: "A", keep: "k", b: 0 });
+});
+
+test(".and() redacts like the equivalent merged object", () => {
+  const names = ["n1", "n2", "n3", "n4", "n5"];
+  const cities = ["c1", "c2", "c3", "c4", "c5"];
+  const left = z.object({ name: redact(z.string(), names) });
+  const right = z.object({ city: redact(z.string(), cities) });
+  const merged = z.object({ ...left.shape, ...right.shape });
+  for (const input of [{ name: "Ann", city: "Oslo" }, { name: "Bob", city: "Rome" }]) {
+    expect(parseAndRedact(left.and(right), input)).toEqual(parseAndRedact(merged, input));
+  }
+});
+
+test("nested intersection inside object and array", () => {
+  const person = z.object({ id: z.string() }).and(z.object({ email: redact(z.string(), "x@x") }));
+  const schema = z.object({ people: z.array(person) });
+  expect(parseAndRedact(schema, { people: [{ id: "1", email: "a@b" }] })).toEqual({
+    people: [{ id: "1", email: "x@x" }],
+  });
+});
+
+test("intersection of non-objects walks both sides", () => {
+  const schema = z.intersection(redact(z.string(), "M"), z.string().min(1));
+  expect(parseAndRedact(schema, "secret")).toBe("M");
+});
+
+test("intersection inside union is matched and redacted", () => {
+  const schema = z.union([
+    z.object({ kind: z.literal("a") }).and(z.object({ s: redact(z.string(), "A") })),
+    z.object({ kind: z.literal("b"), s: redact(z.string(), "B") }),
+  ]);
+  expect(parseAndRedact(schema, { kind: "a", s: "x" })).toEqual({ kind: "a", s: "A" });
+  expect(parseAndRedact(schema, { kind: "b", s: "x" })).toEqual({ kind: "b", s: "B" });
+});
+
+test("async intersection", async () => {
+  const schema = z.object({ a: redact(z.string(), "A") }).and(z.object({ b: redact(z.string(), "B") }));
+  expect(await parseAndRedactAsync(schema, { a: "x", b: "y" })).toEqual({ a: "A", b: "B" });
+});

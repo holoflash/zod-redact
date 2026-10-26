@@ -27,7 +27,7 @@ export function djb2(str: string): number {
 // ---------------------------------------------------------------------------
 
 function resolveSeed(
-  shape: Record<string, z.ZodType>,
+  fields: Record<string, z.ZodType[]>,
   data: Record<string, unknown>,
   parentSeed: string
 ): string {
@@ -35,8 +35,8 @@ function resolveSeed(
   if (id != null && (typeof id === "string" || typeof id === "number" || typeof id === "bigint"))
     return String(id);
   let composite = "";
-  for (const key in shape) {
-    if (getRedact(shape[key]!) && typeof data[key] === "string") composite += data[key];
+  for (const key in fields) {
+    if (fields[key]!.some((s) => getRedact(s)) && typeof data[key] === "string") composite += data[key];
   }
   return composite || parentSeed;
 }
@@ -44,6 +44,27 @@ function resolveSeed(
 // ---------------------------------------------------------------------------
 // Tree introspection helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Flatten an object, or an intersection of objects, into a map of
+ * key → schemas defining that key. Returns undefined for anything else.
+ */
+function objectFields(schema: z.ZodType): Record<string, z.ZodType[]> | undefined {
+  const def: any = (schema as any)._zod.def;
+  if (def.type === "object") {
+    const fields: Record<string, z.ZodType[]> = {};
+    for (const k in def.shape) fields[k] = [def.shape[k]!];
+    return fields;
+  }
+  if (def.type === "intersection") {
+    const left = objectFields(def.left);
+    const right = objectFields(def.right);
+    if (!left || !right) return undefined;
+    for (const k in right) left[k] = [...(left[k] ?? []), ...right[k]!];
+    return left;
+  }
+  return undefined;
+}
 
 function hasRedactInTree(schema: z.ZodType, seen: WeakSet<z.ZodType> = new WeakSet()): boolean {
   if (seen.has(schema)) return false;
@@ -77,6 +98,8 @@ function hasRedactInTree(schema: z.ZodType, seen: WeakSet<z.ZodType> = new WeakS
       return hasRedactInTree(def.innerType, seen);
     case "pipe":
       return hasRedactInTree(def.in, seen) || hasRedactInTree(def.out, seen);
+    case "intersection":
+      return hasRedactInTree(def.left, seen) || hasRedactInTree(def.right, seen);
     case "union":
       return def.options.some((o: z.ZodType) => hasRedactInTree(o, seen));
     case "lazy":
@@ -148,19 +171,26 @@ function walk<T>(
   const def: any = (schema as any)._zod.def;
   const inp = input ?? data;
   switch (def.type) {
-    case "object": {
+    case "object":
+    case "intersection": {
+      const fields = objectFields(schema);
+      if (!fields) {
+        const left = walk(def.left, data, seed, key, inp, hashFn);
+        return walk(def.right, left, seed, key, inp, hashFn);
+      }
       if (typeof data !== "object" || Array.isArray(data)) return data;
-      const shape = def.shape as Record<string, z.ZodType>;
       const record = data as Record<string, unknown>;
       const inputRecord = (typeof inp === "object" && inp !== null && !Array.isArray(inp) ? inp : record) as Record<
         string,
         unknown
       >;
-      const objectSeed = resolveSeed(shape, record, seed);
+      const objectSeed = resolveSeed(fields, record, seed);
       const result = { ...record };
-      for (const k in shape) {
-        if (k in result && result[k] != null)
-          result[k] = walk(shape[k]!, result[k], objectSeed, k, inputRecord[k], hashFn);
+      for (const k in fields) {
+        for (const s of fields[k]!) {
+          if (k in result && result[k] != null)
+            result[k] = walk(s, result[k], objectSeed, k, inputRecord[k], hashFn);
+        }
       }
       return result as T;
     }
@@ -276,19 +306,26 @@ async function walkAsync<T>(
   const def: any = (schema as any)._zod.def;
   const inp = input ?? data;
   switch (def.type) {
-    case "object": {
+    case "object":
+    case "intersection": {
+      const fields = objectFields(schema);
+      if (!fields) {
+        const left = await walkAsync(def.left, data, seed, key, inp, hashFn);
+        return walkAsync(def.right, left, seed, key, inp, hashFn);
+      }
       if (typeof data !== "object" || Array.isArray(data)) return data;
-      const shape = def.shape as Record<string, z.ZodType>;
       const record = data as Record<string, unknown>;
       const inputRecord = (typeof inp === "object" && inp !== null && !Array.isArray(inp) ? inp : record) as Record<
         string,
         unknown
       >;
-      const objectSeed = resolveSeed(shape, record, seed);
+      const objectSeed = resolveSeed(fields, record, seed);
       const result = { ...record };
-      for (const k in shape) {
-        if (k in result && result[k] != null)
-          result[k] = await walkAsync(shape[k]!, result[k], objectSeed, k, inputRecord[k], hashFn);
+      for (const k in fields) {
+        for (const s of fields[k]!) {
+          if (k in result && result[k] != null)
+            result[k] = await walkAsync(s, result[k], objectSeed, k, inputRecord[k], hashFn);
+        }
       }
       return result as T;
     }

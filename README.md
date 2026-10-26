@@ -8,7 +8,7 @@ Post-validation data redaction for [Zod](https://zod.dev) schemas. Annotate fiel
 pnpm install zod-redact
 ```
 
-Requires `zod` as a peer dependency.
+Requires `zod` as a peer dependency (`^3.25.0` via the `zod/v4` subpath, or `^4.0.0`).
 
 ## Usage
 
@@ -99,7 +99,7 @@ Same `id` = same redacted output across runs.
 
 ## Supported types
 
-Objects, arrays, records, tuples, maps, sets, unions, discriminated unions, pipes, optionals, nullables, defaults, readonly, catch, lazy, and nested combinations of all of the above.
+Objects, arrays, records, tuples, maps, sets, unions, discriminated unions, intersections, pipes, optionals, nullables, defaults, readonly, catch, lazy, and nested combinations of all of the above.
 
 ## License
 

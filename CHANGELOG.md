@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.0
+
+- Support intersections (`z.intersection()` / `.and()`). Intersections of objects are seeded like the equivalent merged object, so picks stay consistent.
+- Narrow `zod` peer range to `^3.25.0 || ^4.0.0`.
+- Enable `isolatedDeclarations` so declarations build with TypeScript 7.
+- Update dev dependencies.
+
+## 1.0.5
+
+- Correct repository and homepage links in `package.json`.
+
+## 1.0.4
+
+- Replace deprecated tsdown `external` option with `deps.neverBundle`.
+
+## 1.0.3
+
+- Add bundlejs badge to README.
+
 ## 1.0.2
 
 - Ship CJS source map (`dist/index.cjs.map`) alongside ESM source map.
